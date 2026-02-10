@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Oxide Lucky Wheel – D3KN</title>
+<style>
+  body {
+    background:#2b2b2b;
+    color:#fff;
+    text-align:center;
+    font-family:Arial, sans-serif;
+    margin:0;
+  }
+  canvas {
+    margin-top:60px;
+    background:#3a3a3a;
+    border-radius:50%;
+  }
+  button {
+    margin-top:10px;
+    padding:10px 24px;
+    font-size:18px;
+    cursor:pointer;
+  }
+  input[type=range] {
+    width:300px;
+  }
+
+  /* GUIDE */
+  #helpBtn {
+    position:fixed;
+    top:10px;
+    right:10px;
+    background:#444;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:8px 14px;
+    font-size:14px;
+    cursor:pointer;
+    z-index:1000;
+  }
+  #helpOverlay {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    z-index:999;
+  }
+  #helpBox {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:420px;
+    background:#2f2f2f;
+    border-radius:10px;
+    padding:20px;
+    text-align:left;
+    line-height:1.6;
+  }
+  #helpBox h3 {
+    margin-top:0;
+    text-align:center;
+  }
+  #closeHelp {
+    float:right;
+    cursor:pointer;
+    color:#ff8080;
+    font-weight:bold;
+  }
+</style>
+</head>
+<body>
+
+<button id="helpBtn" onclick="openHelp()">HƯỚNG DẪN</button>
+
+<div id="helpOverlay">
+  <div id="helpBox">
+    <span id="closeHelp" onclick="closeHelp()">✖</span>
+    <h3>📘 HƯỚNG DẪN SỬ DỤNG</h3>
+
+    <b>1️⃣ Cách nhận biết số thứ tự ô</b><br>
+    - Ô <b>số 1</b> là ô 20 <b> ( tính theo chiều kim đồng hồ )</b><br>
+    - Tiếp theo sẽ là 1 ( ô 2 ), 5 ( ô 3 ).. </b><br>
+    - Đếm ô theo <b>chiều kim đồng hồ</b><br>
+    - Mỗi ô có giá trị: <br>
+    &nbsp;&nbsp;• 1 (vàng) &nbsp;• 3 (xanh lá)<br>
+    &nbsp;&nbsp;• 5 (xanh nước) &nbsp;• 10 (đỏ) &nbsp;• 20 (hồng)
+
+    <hr>
+
+    <b>2️⃣ Chỉnh ô mục tiêu</b><br>
+    - Nhập số ô (1–24) vào ô <b>“Ô mục tiêu”</b><br>
+    - Bấm <b>EDIT</b><br>
+    → Tam giác sẽ chỉ đúng ô bạn chọn
+
+    <hr>
+
+    <b>3️⃣ Chỉnh lệch trái / phải</b><br>
+    - Kéo thanh <b>Lệch trái / phải</b><br>
+    - Âm (−) → lệch sang <b>trái</b><br>
+    - Dương (+) → lệch sang <b>phải</b><br>
+    - Dùng để test sát vạch giữa 2 ô
+
+    <hr>
+
+    <b>4️⃣ Quay vòng</b><br>
+    - Bấm <b>SPIN</b> để quay<br>
+    - Kết quả hiển thị theo đúng ô tam giác chỉ
+
+  </div>
+</div>
+
+<h2>Lucky WHEEL – DUC3KYA | Oxide Survival Island</h2>
+<canvas id="wheel" width="520" height="520"></canvas><br>
+
+<button onclick="spin()">SPIN</button>
+
+<div style="margin-top:15px;">
+  <label>Ô mục tiêu:</label>
+  <input id="targetSlot" type="number" min="1" max="24" value="1" style="width:60px;">
+  <br><br>
+
+  <label>Lệch trái / phải:</label><br>
+  <input id="offsetSlider" type="range" min="-1" max="1" step="0.01" value="0">
+  <div>Lệch: <span id="offsetValue">0</span></div>
+
+  <button onclick="alignToTarget()">EDIT</button>
+</div>
+
+<p id="result"></p>
+
+<script>
+// ================== HELP ==================
+function openHelp() {
+  document.getElementById("helpOverlay").style.display = "block";
+}
+function closeHelp() {
+  document.getElementById("helpOverlay").style.display = "none";
+}
+
+// ================== DATA ==================
+const values = [
+  20, 1, 5, 1, 3, 1, 5, 1,
+  10, 1, 3, 1, 5, 1, 3, 1,
+  10, 1, 3, 1, 5, 1, 3, 1
+];
+
+// ================== COLOR ==================
+function getColor(val) {
+  if (val === 1)  return "#d4c72a";
+  if (val === 3)  return "#2e8b57";
+  if (val === 5)  return "#2f6fd6";
+  if (val === 10) return "#b13a2c";
+  if (val === 20) return "#8e3a8c";
+}
+
+// ================== CANVAS ==================
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const center = 260;
+const radius = 235;
+const innerRadius = 120;
+const slice = 2 * Math.PI / values.length;
+const OFFSET = -Math.PI / 2;
+
+let angle = 0;
+
+// ================== DRAW ==================
+function drawWheel() {
+  ctx.clearRect(0,0,520,520);
+
+  for (let i = 0; i < values.length; i++) {
+    const startAngle = OFFSET + angle + i * slice;
+    const endAngle   = OFFSET + angle + (i + 1) * slice;
+
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.fillStyle = getColor(values[i]);
+    ctx.arc(center, center, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(startAngle + slice / 2);
+    ctx.fillStyle = "#111";
+    ctx.font = "bold 18px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(values[i], radius - 25, 6);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.fillStyle = "#4b2f1a";
+  ctx.arc(center, center, innerRadius, 0, 2*Math.PI);
+  ctx.fill();
+
+  ctx.fillStyle="#eee";
+  ctx.beginPath();
+  ctx.arc(center, center, 3, 0, 2*Math.PI);
+  ctx.fill();
+
+  ctx.fillStyle = "#3b2a1a";
+  ctx.beginPath();
+  ctx.moveTo(center, 52);
+  ctx.lineTo(center-14, 20);
+  ctx.lineTo(center+14, 20);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ================== SPIN ==================
+function spin() {
+  const spins = Math.random()*2200 + 3600;
+  const start = angle;
+  const end = start + spins * Math.PI / 180;
+  const duration = 3500;
+  let startTime = null;
+
+  function animate(t) {
+    if (!startTime) startTime = t;
+    const p = Math.min((t - startTime) / duration, 1);
+
+    angle = start + (end - start) * (1 - Math.pow(1 - p, 3));
+    drawWheel();
+
+    if (p < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      const TWO_PI = 2 * Math.PI;
+      const a = ((angle % TWO_PI) + TWO_PI) % TWO_PI;
+      let index = Math.floor((TWO_PI - a) / slice) % values.length;
+      index = (index + values.length) % values.length;
+
+      document.getElementById("result").innerText =
+        `KẾT QUẢ: Ô ${index + 1} → ${values[index]}`;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// ================== ALIGN ==================
+function alignToTarget() {
+  const slot = parseInt(document.getElementById("targetSlot").value);
+  const offsetRatio = parseFloat(document.getElementById("offsetSlider").value);
+  if (slot < 1 || slot > values.length) return;
+
+  const targetAngle = (slot - 1) * slice + slice / 2;
+  const offsetAngle = offsetRatio * slice;
+
+  angle = -(targetAngle + offsetAngle);
+  drawWheel();
+}
+
+document.getElementById("offsetSlider").addEventListener("input", e => {
+  document.getElementById("offsetValue").innerText = e.target.value;
+});
+
+// ================== INIT ==================
+drawWheel();
+</script>
+
+</body>
+</html>
