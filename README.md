@@ -106,10 +106,5 @@ Một vòng quay mô phỏng **Rust Big Wheel** dùng cho:
 - Test / debug **plugin Rust Big Wheel**
 - Nghiên cứu **logic snap – lệch – kết quả**
 - Demo / training / kiểm thử
-- Không dùng cho gian lận online
 
----
-
-## 📄 License
-
-MIT
+Thanks mấy ní zì đã quan tâm :D
