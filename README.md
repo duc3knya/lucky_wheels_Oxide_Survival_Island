@@ -1,6 +1,6 @@
-# 🎡 Rust Big Wheel – Visual & Logic Tester
+# 🎡 Oxide Lucky Wheel – Visual & Logic Tester
 
-Một vòng quay mô phỏng **Rust Big Wheel** dùng cho:
+Một vòng quay mô phỏng vòng quay trong game Oxide Survival Island dùng cho:
 - Test **thứ tự ô**
 - Test **lệch trái / phải trong 1 ô**
 - Test **logic kết quả theo tam giác**
@@ -103,7 +103,7 @@ Một vòng quay mô phỏng **Rust Big Wheel** dùng cho:
 
 ## 🎯 Mục đích sử dụng
 
-- Test / debug **plugin Rust Big Wheel**
+- Test / debug **plugin Oxide Lucky Wheel**
 - Nghiên cứu **logic snap – lệch – kết quả**
 - Demo / training / kiểm thử
 
